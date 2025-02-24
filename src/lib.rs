@@ -429,6 +429,15 @@ impl Serialize for Serde<Option<RegexSet>> {
     }
 }
 
+impl<'a> Serialize for Serde<&'a RegexSet> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.0.patterns().serialize(serializer)
+    }
+}
+
 impl Serialize for Serde<RegexSet> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
