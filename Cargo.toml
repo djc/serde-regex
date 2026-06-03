@@ -12,6 +12,7 @@ documentation = "https://docs.rs/serde_regex"
 version = "1.1.0"
 authors = ["paul@colomiets.name"]
 edition = "2018"
+rust-version = "1.65"
 
 [dependencies]
 serde = "1.0.0"
