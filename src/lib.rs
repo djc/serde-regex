@@ -54,7 +54,7 @@ struct BytesRegexVecVisitor;
 impl<'a> Visitor<'a> for RegexVecVisitor {
     type Value = Serde<Vec<Regex>>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("valid sequence")
     }
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
@@ -75,7 +75,7 @@ impl<'a> Visitor<'a> for RegexVecVisitor {
 impl<'a> Visitor<'a> for BytesRegexVecVisitor {
     type Value = Serde<Vec<bytes::Regex>>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("valid sequence")
     }
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
@@ -115,7 +115,7 @@ where
 {
     type Value = Serde<HashMap<K, Regex, S>>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("valid map")
     }
     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
@@ -140,7 +140,7 @@ where
 {
     type Value = Serde<HashMap<K, bytes::Regex, S>>;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("valid map")
     }
     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
@@ -159,59 +159,59 @@ where
 }
 
 impl<'de> Deserialize<'de> for Serde<Option<Regex>> {
-    fn deserialize<D>(d: D) -> Result<Serde<Option<Regex>>, D::Error>
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         match Option::<Serde<Regex>>::deserialize(d)? {
-            Some(Serde(regex)) => Ok(Serde(Some(regex))),
-            None => Ok(Serde(None)),
+            Some(Serde(regex)) => Ok(Self(Some(regex))),
+            None => Ok(Self(None)),
         }
     }
 }
 
 impl<'de> Deserialize<'de> for Serde<Regex> {
-    fn deserialize<D>(d: D) -> Result<Serde<Regex>, D::Error>
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
-        let s = <Cow<str>>::deserialize(d)?;
+        let s = <Cow<'de, str>>::deserialize(d)?;
 
         match s.parse() {
-            Ok(regex) => Ok(Serde(regex)),
+            Ok(regex) => Ok(Self(regex)),
             Err(err) => Err(D::Error::custom(err)),
         }
     }
 }
 
 impl<'de> Deserialize<'de> for Serde<Option<RegexSet>> {
-    fn deserialize<D>(d: D) -> Result<Serde<Option<RegexSet>>, D::Error>
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         match Option::<Serde<RegexSet>>::deserialize(d)? {
-            Some(Serde(regexset)) => Ok(Serde(Some(regexset))),
-            None => Ok(Serde(None)),
+            Some(Serde(regexset)) => Ok(Self(Some(regexset))),
+            None => Ok(Self(None)),
         }
     }
 }
 
 impl<'de> Deserialize<'de> for Serde<RegexSet> {
-    fn deserialize<D>(d: D) -> Result<Serde<RegexSet>, D::Error>
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
-        let regexes = <Vec<Cow<str>>>::deserialize(d)?;
+        let regexes = <Vec<Cow<'de, str>>>::deserialize(d)?;
 
         match RegexSet::new(regexes) {
-            Ok(regexset) => Ok(Serde(regexset)),
+            Ok(regexset) => Ok(Self(regexset)),
             Err(err) => Err(D::Error::custom(err)),
         }
     }
 }
 
 impl<'de> Deserialize<'de> for Serde<Vec<Regex>> {
-    fn deserialize<D>(d: D) -> Result<Serde<Vec<Regex>>, D::Error>
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -233,13 +233,13 @@ where
 }
 
 impl<'de> Deserialize<'de> for Serde<Option<Vec<bytes::Regex>>> {
-    fn deserialize<D>(d: D) -> Result<Serde<Option<Vec<bytes::Regex>>>, D::Error>
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         match Option::<Serde<Vec<bytes::Regex>>>::deserialize(d)? {
-            Some(Serde(regex)) => Ok(Serde(Some(regex))),
-            None => Ok(Serde(None)),
+            Some(Serde(regex)) => Ok(Self(Some(regex))),
+            None => Ok(Self(None)),
         }
     }
 }
@@ -254,20 +254,20 @@ where
         D: Deserializer<'de>,
     {
         match Option::<Serde<HashMap<K, bytes::Regex, S>>>::deserialize(d)? {
-            Some(Serde(map)) => Ok(Serde(Some(map))),
-            None => Ok(Serde(None)),
+            Some(Serde(map)) => Ok(Self(Some(map))),
+            None => Ok(Self(None)),
         }
     }
 }
 
 impl<'de> Deserialize<'de> for Serde<Option<Vec<Regex>>> {
-    fn deserialize<D>(d: D) -> Result<Serde<Option<Vec<Regex>>>, D::Error>
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         match Option::<Serde<Vec<Regex>>>::deserialize(d)? {
-            Some(Serde(regex)) => Ok(Serde(Some(regex))),
-            None => Ok(Serde(None)),
+            Some(Serde(regex)) => Ok(Self(Some(regex))),
+            None => Ok(Self(None)),
         }
     }
 }
@@ -282,54 +282,54 @@ where
         D: Deserializer<'de>,
     {
         match Option::<Serde<HashMap<K, Regex, S>>>::deserialize(d)? {
-            Some(Serde(map)) => Ok(Serde(Some(map))),
-            None => Ok(Serde(None)),
+            Some(Serde(map)) => Ok(Self(Some(map))),
+            None => Ok(Self(None)),
         }
     }
 }
 
 impl<'de> Deserialize<'de> for Serde<Option<bytes::Regex>> {
-    fn deserialize<D>(d: D) -> Result<Serde<Option<bytes::Regex>>, D::Error>
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         match Option::<Serde<bytes::Regex>>::deserialize(d)? {
-            Some(Serde(regex)) => Ok(Serde(Some(regex))),
-            None => Ok(Serde(None)),
+            Some(Serde(regex)) => Ok(Self(Some(regex))),
+            None => Ok(Self(None)),
         }
     }
 }
 
 impl<'de> Deserialize<'de> for Serde<bytes::Regex> {
-    fn deserialize<D>(d: D) -> Result<Serde<bytes::Regex>, D::Error>
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
-        let s = <Cow<str>>::deserialize(d)?;
+        let s = <Cow<'de, str>>::deserialize(d)?;
 
         match s.parse() {
-            Ok(regex) => Ok(Serde(regex)),
+            Ok(regex) => Ok(Self(regex)),
             Err(err) => Err(D::Error::custom(err)),
         }
     }
 }
 
 impl<'de> Deserialize<'de> for Serde<bytes::RegexSet> {
-    fn deserialize<D>(d: D) -> Result<Serde<bytes::RegexSet>, D::Error>
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
-        let regexes = <Vec<Cow<str>>>::deserialize(d)?;
+        let regexes = <Vec<Cow<'de, str>>>::deserialize(d)?;
 
         match bytes::RegexSet::new(regexes) {
-            Ok(regexset) => Ok(Serde(regexset)),
+            Ok(regexset) => Ok(Self(regexset)),
             Err(err) => Err(D::Error::custom(err)),
         }
     }
 }
 
 impl<'de> Deserialize<'de> for Serde<Vec<bytes::Regex>> {
-    fn deserialize<D>(d: D) -> Result<Serde<Vec<bytes::Regex>>, D::Error>
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -388,8 +388,8 @@ impl<T> Serde<T> {
 }
 
 impl<T> From<T> for Serde<T> {
-    fn from(val: T) -> Serde<T> {
-        Serde(val)
+    fn from(val: T) -> Self {
+        Self(val)
     }
 }
 
