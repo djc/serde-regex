@@ -27,23 +27,20 @@
 #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
 
-use regex::{Regex, RegexSet, bytes};
+use regex::{bytes, Regex, RegexSet};
 use std::{
     borrow::Cow,
     collections::HashMap,
     fmt,
     hash::{BuildHasher, Hash},
     marker::PhantomData,
-    ops::{Deref, DerefMut}
+    ops::{Deref, DerefMut},
 };
 
 use serde::{
-    Deserialize,
-    Deserializer,
-    Serialize,
-    Serializer,
     de::{Error, MapAccess, SeqAccess, Visitor},
-    ser::{SerializeMap, SerializeSeq}
+    ser::{SerializeMap, SerializeSeq},
+    Deserialize, Deserializer, Serialize, Serializer,
 };
 
 /// A wrapper type which implements `Serialize` and `Deserialize` for
@@ -96,7 +93,6 @@ impl<'a> Visitor<'a> for BytesRegexVecVisitor {
     }
 }
 
-
 struct RegexHashMapVisitor<K, S>(PhantomData<(K, S)>);
 struct BytesRegexHashMapVisitor<K, S>(PhantomData<(K, S)>);
 
@@ -112,7 +108,6 @@ impl<K, S> Default for BytesRegexHashMapVisitor<K, S> {
     }
 }
 
-
 impl<'a, K, S> Visitor<'a> for RegexHashMapVisitor<K, S>
 where
     K: Hash + Eq + Deserialize<'a>,
@@ -125,7 +120,7 @@ where
     }
     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
     where
-        A: MapAccess<'a>
+        A: MapAccess<'a>,
     {
         let mut hashmap = match map.size_hint() {
             Some(size) => HashMap::with_capacity_and_hasher(size, S::default()),
@@ -150,7 +145,7 @@ where
     }
     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
     where
-        A: MapAccess<'a>
+        A: MapAccess<'a>,
     {
         let mut hashmap = match map.size_hint() {
             Some(size) => HashMap::with_capacity_and_hasher(size, S::default()),
@@ -162,7 +157,6 @@ where
         return Ok(Serde(hashmap));
     }
 }
-
 
 impl<'de> Deserialize<'de> for Serde<Option<Regex>> {
     fn deserialize<D>(d: D) -> Result<Serde<Option<Regex>>, D::Error>
@@ -243,7 +237,7 @@ impl<'de> Deserialize<'de> for Serde<Option<Vec<bytes::Regex>>> {
     where
         D: Deserializer<'de>,
     {
-         match Option::<Serde<Vec<bytes::Regex>>>::deserialize(d)? {
+        match Option::<Serde<Vec<bytes::Regex>>>::deserialize(d)? {
             Some(Serde(regex)) => Ok(Serde(Some(regex))),
             None => Ok(Serde(None)),
         }
@@ -259,7 +253,7 @@ where
     where
         D: Deserializer<'de>,
     {
-         match Option::<Serde<HashMap<K, bytes::Regex, S>>>::deserialize(d)? {
+        match Option::<Serde<HashMap<K, bytes::Regex, S>>>::deserialize(d)? {
             Some(Serde(map)) => Ok(Serde(Some(map))),
             None => Ok(Serde(None)),
         }
@@ -271,7 +265,7 @@ impl<'de> Deserialize<'de> for Serde<Option<Vec<Regex>>> {
     where
         D: Deserializer<'de>,
     {
-         match Option::<Serde<Vec<Regex>>>::deserialize(d)? {
+        match Option::<Serde<Vec<Regex>>>::deserialize(d)? {
             Some(Serde(regex)) => Ok(Serde(Some(regex))),
             None => Ok(Serde(None)),
         }
@@ -287,7 +281,7 @@ where
     where
         D: Deserializer<'de>,
     {
-         match Option::<Serde<HashMap<K, Regex, S>>>::deserialize(d)? {
+        match Option::<Serde<HashMap<K, Regex, S>>>::deserialize(d)? {
             Some(Serde(map)) => Ok(Serde(Some(map))),
             None => Ok(Serde(None)),
         }
@@ -648,42 +642,30 @@ where
 mod test {
     use std::collections::HashMap;
 
-    use serde_json::{json, from_value, from_str, to_string, to_value};
-    use regex::{Regex, RegexSet, bytes};
     use crate::Serde;
+    use regex::{bytes, Regex, RegexSet};
+    use serde_json::{from_str, from_value, json, to_string, to_value};
 
     const SAMPLE: &str = r#"[a-z"\]]+\d{1,10}""#;
     const SAMPLE_JSON: &str = r#""[a-z\"\\]]+\\d{1,10}\"""#;
 
     #[test]
     fn test_set() -> Result<(), Box<dyn std::error::Error>> {
-        let regexes = &[
-            "my(regex)?",
-            "other[regex]+",
-        ];
+        let regexes = &["my(regex)?", "other[regex]+"];
         let json = json!(regexes);
         let set: Serde<RegexSet> = from_value(json.clone())?;
         assert_eq!(set.patterns(), regexes);
-        assert_eq!(
-            to_value(set).expect("serialization error"),
-            json
-        );
+        assert_eq!(to_value(set).expect("serialization error"), json);
         Ok(())
     }
 
     #[test]
     fn test_set_option_some() -> Result<(), Box<dyn std::error::Error>> {
-        let regexes = &[
-            "my(regex)?",
-            "other[regex]+",
-        ];
+        let regexes = &["my(regex)?", "other[regex]+"];
         let json = json!(regexes);
         let set: Serde<Option<RegexSet>> = from_value(json.clone())?;
         assert_eq!(set.as_ref().unwrap().patterns(), regexes);
-        assert_eq!(
-            to_value(set).expect("serialization error"),
-            json
-        );
+        assert_eq!(to_value(set).expect("serialization error"), json);
         Ok(())
     }
 
@@ -738,17 +720,11 @@ mod test {
 
     #[test]
     fn test_set_bytes() -> Result<(), Box<dyn std::error::Error>> {
-        let regexes = &[
-            "regex.*test",
-            "test( )??regex+",
-        ];
+        let regexes = &["regex.*test", "test( )??regex+"];
         let json = json!(regexes);
         let set: Serde<bytes::RegexSet> = from_value(json.clone())?;
         assert_eq!(set.patterns(), regexes);
-        assert_eq!(
-            to_value(set).expect("serialization error"),
-            json
-        );
+        assert_eq!(to_value(set).expect("serialization error"), json);
         Ok(())
     }
 
